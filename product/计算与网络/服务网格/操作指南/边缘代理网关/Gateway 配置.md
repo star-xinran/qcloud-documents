@@ -23,31 +23,31 @@ spec:
   - port:
       number: 443
       name: https-443
-      protocol: HTTPS
+      protocol: HTTPS # 开启端口 HTTPS
     hosts:
     - uk.bookinfo.com
     - eu.bookinfo.com
     tls:
-      mode: SIMPLE # 开启端口的 HTTPS 认证
+      mode: SIMPLE # TLS 单向认证
       serverCertificate: /etc/certs/servercert.pem # 文件挂载方式加载证书
       privateKey: /etc/certs/privatekey.pem
   - port:
       number: 9443
       name: https-9443
-      protocol: HTTPS
+      protocol: HTTPS # 开启端口 HTTPS
     hosts:
     - "bookinfo-namespace/*.bookinfo.com"
     tls:
-      mode: SIMPLE # 开启端口的 HTTPS 认证
+      mode: SIMPLE # TLS 单向认证
       credentialName: bookinfo-secret # 通过 SDS 方式从 Kubernetes secret 加载证书
   - port:
       number: 5443
       name: https-ssl
-      protocol: HTTPS
+      protocol: HTTPS # 开启端口 HTTPS
     hosts:
     - "*"
     tls:
-      mode: SIMPLE # 开启端口的 HTTPS 认证
+      mode: SIMPLE # TLS 单向认证
       credentialName: qcloud-abcdABCD # 通过 SDS 方式从腾讯云 SSL 平台加载证书 ID 为 abcdABCD 的证书
   - port:
       number: 6443
@@ -65,7 +65,7 @@ spec:
 | 字段名称 | 字段类型 | 字段说明 |
 | ----- | ---- | ----- |
 | `metadata.name` | `string` | Gateway 名称 | 
-| `metadata. namespace` | `string` | Gateway 命名空间 | 
+| `metadata.namespace` | `string` | Gateway 命名空间 | 
 | `spec.selector` | `map<string, string>` | Gateway 使用填写的标签键值对匹配配置下发的边缘代理网关实例 |
 | `spec.servers.port.number` | `uint32` | 端口 |
 | `spec.servers.port.protocol` | `string` | 通信协议，支持：`HTTP|HTTPS|GRPC|HTTP2|MONGO|TCP|TLS` |
@@ -75,7 +75,7 @@ spec:
 | `spec.servers.tls.mode` | - | 配置当前端口的 TLS 安全认证模式，如需要开启当前端口的安全认证则需要填写。支持：`PASSTHROUGH|SIMPLE|MUTUAL|AUTO_PASSTHROUGH|ISTIO_MUTUAL` |
 | `spec.servers.tls.credentialName` | `string` | 配置发现 TLS 证书密钥的 secret 的名称，支持从 Ingress Gateway 实例在同一 namespace 下的 Kubernetes secret 中加载证书与密钥，您需要确保填写的 secret 中包含合适的证书与密钥。 TCM 还实现了加载腾讯云 SSL 平台证书的功能，按照 `qcloud-{ssl 平台证书 ID}` 格式填写本字段，TCM 边缘代理网关控制器即会为边缘代理网关加载 SSL 平台的证书。当前仅支持从 SSL 平台加载单向认证 SIMPLE 模式的服务器证书和私钥 |
 | `spec.servers.tls.serverCertificate` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的证书路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-certs secret 加载证书至路径 `/etc/istio/ingressgateway-certs` |
-| `spec.servers.tls. privateKey ` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的私钥路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-certs secret 加载私钥至路径 `/etc/istio/ingressgateway-certs` |
+| `spec.servers.tls.privateKey ` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的私钥路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-certs secret 加载私钥至路径 `/etc/istio/ingressgateway-certs` |
 | `spec.servers.tls.caCertificates` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的跟证书路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-ca-certs 加载根证书至路径 `/etc/istio/ingressgateway-ca-certs`，双向认证时需要配置根证书 |
 
 ## 从 SSL 平台加载证书至边缘代理网关配置示例
