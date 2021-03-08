@@ -100,5 +100,5 @@ CAM自定义策略核心元素包括：操作（action）、资源（resource）
 | API 操作 | API 描述 | 资源 |
 | :-------- | :--------| :------ |
 | CreateTrial |  创建服务网格一键体验环境 | 只对接口进行鉴权 ` * ` |
-| DeleteGatewayInstance |  删除边缘代理网关 | 只对接口进行鉴权 ` * ` |
-| UpdateGatewayInstance |  更新边缘代理网关 | 只对接口进行鉴权 ` * ` |
+| DeleteTrial |  删除服务网格一键体验环境 | 只对接口进行鉴权 ` * ` |
+| RetryTrialTask |  重试创建服务网格一键体验环境 | 只对接口进行鉴权 ` * ` |
