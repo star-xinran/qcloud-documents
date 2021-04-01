@@ -68,15 +68,54 @@ spec:
 | `metadata.namespace` | `string` | Gateway 命名空间 | 
 | `spec.selector` | `map<string, string>` | Gateway 使用填写的标签键值对匹配配置下发的边缘代理网关实例 |
 | `spec.servers.port.number` | `uint32` | 端口 |
-| `spec.servers.port.protocol` | `string` | 通信协议，支持：`HTTP|HTTPS|GRPC|HTTP2|MONGO|TCP|TLS` |
-| `spec.servers.port.name` | `string` | 端口名称，当前 TCM 实现了通过端口名称指定 SSL 证书解包上移至 CLB 的功能，如您需要配置证书上移，您可以按照 `clb-https-{端口号}-{ssl 平台证书 ID}` 的方式命名，证书上移功能仅在当前端口通信协议指定为 HTTP 时生效，边缘代理网关控制器会自动创建 CLB 7层监听器实现证书上移，CLB SSL 解包完成后，CLB 实例与 Ingress Gateway Pod 采用明文通信 |
+| `spec.servers.port.protocol` | `string` | 通信协议，支持：`HTTP, HTTPS, GRPC, HTTP2, MONGO, TCP, TLS`，请注意同一网关同一端口的协议配置需要保持一致。 |
+| `spec.servers.port.name` | `string` | 端口名称，当前 TCM 实现了通过端口名称指定 SSL 证书解包上移至 CLB 的功能，如您需要配置证书上移，您可以按照 `clb-https-{端口号}-{ssl 平台证书 ID}` 的方式命名，证书上移功能仅在当前端口通信协议指定为 HTTP 时生效，边缘代理网关控制器会自动创建 CLB 7层监听器实现证书上移，CLB SSL 解包完成后，CLB 实例与 Ingress Gateway Pod 采用明文通信。请注意同一网关同一端口的证书上移配置需要保持一致，否则会引起配置冲突。 |
 | `spec.severs.hosts` | `string[]` | 域名，支持通配符 `*` |
 | `spec.servers.tls.httpsRedirect` | `bool` | 值为 `true` 时，边缘代理网关会对所有 http 请求返回 301 重定向，要求客户端发起 https 请求 |
-| `spec.servers.tls.mode` | - | 配置当前端口的 TLS 安全认证模式，如需要开启当前端口的安全认证则需要填写。支持：`PASSTHROUGH|SIMPLE|MUTUAL|AUTO_PASSTHROUGH|ISTIO_MUTUAL` |
+| `spec.servers.tls.mode` | - | 配置当前端口的 TLS 安全认证模式，如需要开启当前端口的安全认证则需要填写。支持：`PASSTHROUGH, SIMPLE, MUTUAL, AUTO_PASSTHROUGH, ISTIO_MUTUAL` |
 | `spec.servers.tls.credentialName` | `string` | 配置发现 TLS 证书密钥的 secret 的名称，支持从 Ingress Gateway 实例在同一 namespace 下的 Kubernetes secret 中加载证书与密钥，您需要确保填写的 secret 中包含合适的证书与密钥。 TCM 还实现了加载腾讯云 SSL 平台证书的功能，按照 `qcloud-{ssl 平台证书 ID}` 格式填写本字段，TCM 边缘代理网关控制器即会为边缘代理网关加载 SSL 平台的证书。当前仅支持从 SSL 平台加载单向认证 SIMPLE 模式的服务器证书和私钥 |
 | `spec.servers.tls.serverCertificate` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的证书路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-certs secret 加载证书至路径 `/etc/istio/ingressgateway-certs` |
 | `spec.servers.tls.privateKey ` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的私钥路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-certs secret 加载私钥至路径 `/etc/istio/ingressgateway-certs` |
 | `spec.servers.tls.caCertificates` | `string` | 设置端口的 TLS 证书密钥通过 file mount 形式（不推荐，推荐采用填写 `credentialName` 字段加载证书私钥）挂载时需要填写的跟证书路径字段，Istio 默认使用网关所在命名空间下 istio-ingressgateway-ca-certs 加载根证书至路径 `/etc/istio/ingressgateway-ca-certs`，双向认证时需要配置根证书 |
+
+## 从 Kubernetes Secret 加载证书至边缘代理网关配置示例
+
+### YAML 配置示例
+
+```
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-gw
+  namespace: default
+spec:
+  servers:
+    - port:
+        number: 443
+        name: HTTPS-443-6cph
+        protocol: HTTPS
+      hosts:
+        - '*'
+      tls:
+        mode: SIMPLE
+        credentialName: {kubernetes secret 名称}
+  selector:
+    app: istio-ingressgateway
+    istio: ingressgateway
+```
+
+### 控制台配置示例
+
+控制台创建 Gateway 配置 Ingress Gateway HTTPS 协议 SSL 证书从 Kubernetes secret 加载（单向认证）的过程如下：
+
+1. 选择协议为【HTTPS】，TLS 模式为【SIMPLE】
+2. 证书解包选择【边缘代理网关解包】
+3. 证书挂载模式选择【SDS加载】
+4. 证书来源选择【K8S Secret】
+5. K8S Secret 选择【选择已有】，选择当前所选边缘代理网关所在 namespace 下的 Secret，请您确保所选 Secret 中包含合适的证书/私钥/根证书
+![](https://main.qcloudimg.com/raw/bedf6f7589c35e39719956148c1c1ecd.png)
+6. 如当前 Secret 中未有合适证书，您可以选择【新建】K8S Secret，复制合适的证书/私钥/跟证书内容至对应输入框
+![](https://main.qcloudimg.com/raw/516797c700455ed6a68fb547b49cc744.png)
 
 ## 从 SSL 平台加载证书至边缘代理网关配置示例
 
